@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # script that sets up web servers for deployment
 sudo apt-get update
 sudo apt-get -y install nginx
