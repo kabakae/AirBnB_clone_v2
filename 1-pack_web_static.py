@@ -4,18 +4,27 @@ Fabric script to generate tgz archive
 """
 
 from datetime import datetime
-from fabric.api import *
+from fabric.api import local
 
 def do_pack():
     """
-    making an archive on web_static
+    Create a compressed archive of the web_static folder
     """
-
+    # Get the current time
     time = datetime.now()
-    archive = 'web_static_' + time.strftime("%Y%m%d%H%M%S") + '.' + 'tgz'
-    local('mkdir -p version')
-    result = local('tar -cvzf version/{} web_static'.format(archive))
+    
+    # Define the name of the archive
+    archive_name = 'web_static_' + time.strftime("%Y%m%d%H%M%S") + '.tgz'
+    
+    # Create the 'versions' directory if it doesn't exist
+    local('mkdir -p versions')
+    
+    # Compress the web_static folder into the archive
+    result = local('tar -cvzf versions/{} web_static'.format(archive_name))
+    
+    # Check if the archiving process was successful
     if result.succeeded:
-        return 'version/' + archive
+        print("web_static packed: versions/{} -> {}Bytes".format(archive_name, result.return_code))
+        return 'versions/' + archive_name
     else:
         return None
