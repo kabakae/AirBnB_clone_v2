@@ -3,8 +3,13 @@
 Fabric script to distribute an archive to web servers
 """
 
-from fabric.api import env, run, put
+from fabric.api import env, run, put, local
 import os
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Define the servers
 env.user = 'ubuntu'  # SSH username
@@ -14,37 +19,28 @@ env.hosts = ['100.26.252.79', '34.232.69.77']  # IP addresses as strings
 
 def do_pack():
     """
-    Creates an archive from the web_static folder
+    Creates an archive from the web_static folder locally
     """
     try:
-        from fabric.api import local
         from datetime import datetime
 
-        # Create the directory if not exist
-        if not os.path.exists("versions"):
-            local("mkdir -p versions")
-
-        # Create the archive file
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         archive_name = "versions/web_static_{}.tgz".format(timestamp)
+
+        # Create the directory
+        os.makedirs("versions", exist_ok=True)
+
+        # Create a custom HTML file
+        with open("web_static/my_index.html", "w") as f:
+            f.write("<html><head></head><body>Hello world!</body></html>")
+
+        # Tar the folder
         local("tar -cvzf {} web_static".format(archive_name))
 
         return archive_name
-    except:
+    except Exception as e:
+        logger.error("Error occurred while creating archive: %s", e)
         return None
-
-
-def deploy():
-    """
-    Deploy the web_static archive to the web servers
-    """
-    # Create the archive
-    archive_path = do_pack()
-    if archive_path is None:
-        return False
-
-    # Deploy the archive
-    return do_deploy(archive_path)
 
 
 def do_deploy(archive_path):
@@ -52,6 +48,7 @@ def do_deploy(archive_path):
     Distribute an archive to web servers
     """
     if not os.path.exists(archive_path):
+        logger.error("Archive %s not found.", archive_path)
         return False
 
     try:
@@ -81,8 +78,30 @@ def do_deploy(archive_path):
         run('ln -s {}{}/ /data/web_static/current'.format(releases_path,
             archive_name))
 
-        print("New version deployed!")
+        logger.info("New version deployed!")
         return True
     except Exception as e:
-        print(e)
+        logger.error("Error occurred while deploying: %s", e)
         return False
+
+
+def deploy():
+    """
+    Deploy the web_static archive to the web servers
+    """
+    # Create the archive
+    archive_path = do_pack()
+    if archive_path is None:
+        return False
+
+    # Deploy locally
+    local_deployed = local("tar -xzf {} -C ./versions/".format(archive_path))
+    if local_deployed.failed:
+        logger.error("Local deployment failed")
+        return False
+
+    # Deploy remotely
+    return do_deploy(archive_path)
+
+
+deploy()
