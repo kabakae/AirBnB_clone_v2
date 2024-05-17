@@ -7,6 +7,8 @@ It listens on 0.0.0.0, port 5000, and has two routes:
 """
 
 from flask import Flask
+from markupsafe import escape
+
 
 app = Flask(__name__)
 
@@ -21,6 +23,11 @@ def hello_hbnb():
 def hbnb():
     """Displays 'HBNB'"""
     return "HBNB"
+
+@app.route('/c<text>',strict_slashes=False)
+def c_text(text):
+    """Displays 'C ' followed by the value of the text variable"""
+    return "C {}".format(escape(text).replace("_", " "))
 
 
 if __name__ == "__main__":
