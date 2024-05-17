@@ -1,5 +1,11 @@
 #!/usr/bin/python3
-# web_flask/0-hello_route.py
+"""
+This script starts a Flask web application.
+It listens on 0.0.0.0, port 5000, and has two routes:
+- /: displays "Hello HBNB!"
+- /hbnb: displays "HBNB"
+"""
+
 
 from flask import Flask
 
